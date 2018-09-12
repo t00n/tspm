@@ -2,6 +2,8 @@ import subprocess as sp
 import sys
 from xml.etree.ElementTree import parse
 
+import click
+
 
 serz_cmd = [
     "wine",
@@ -71,23 +73,26 @@ def check_duplicate():
                 print("\t%s %s" % (p, n))
 
 
+@click.group()
+def cli():
+    pass
+
+
+@cli.command()
+def list():
+    keymapping = get_keymapping()
+    max_b_size = max([len(b) for b in keymapping.keys()])
+    max_p_size = max([len(p) for p, _ in keymapping.values()])
+
+    for b, (p, n) in keymapping.items():
+        line = "%s\t|\t%s\t|\t%s" % (str(b).ljust(max_b_size), str(p).ljust(max_p_size), n)
+        print(line)
+
+
+@cli.command()
+def duplicate():
+    check_duplicate()
+
+
 if __name__ == '__main__':
-    if sys.argv[1] == "duplicate":
-        check_duplicate()
-    elif sys.argv[1] == "list-keys":
-        keymapping = get_keymapping()
-        max_b_size = max([len(b) for b in keymapping.keys()])
-        max_p_size = max([len(p) for p, _ in keymapping.values()])
-
-        for b, (p, n) in keymapping.items():
-            line = "%s\t|\t%s\t|\t%s" % (str(b).ljust(max_b_size), str(p).ljust(max_p_size), n)
-            print(line)
-    elif sys.argv[1] == "list-params":
-        parametermapping = get_parametermapping()
-        max_p_size = max([len(p) for p in parametermapping.keys()])
-
-        for p, b in parametermapping.items():
-            line = "%s\t|\t%s" % (str(p).ljust(max_p_size), b)
-            print(line)
-    else:
-        sp.run(to_xml_cmd)
+    cli()
