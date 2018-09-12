@@ -52,10 +52,17 @@ def check_duplicate():
         button = map_entry.find('Button').text
         name = map_entry.find('Name').text
 
+        if "Stop" in name:
+            action = name[:-4]
+        elif "Start" in name:
+            action = name[:-5]
+        else:
+            action = name
+
         if button not in keymapping:
             keymapping[button] = set()
 
-        keymapping[button].add((parameter, name))
+        keymapping[button].add((parameter, action))
 
     for button, params in keymapping.items():
         if len(params) > 1:
