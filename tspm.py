@@ -7,21 +7,23 @@ import os
 import zipfile
 import subprocess
 import traceback
+import glob
 from bs4 import BeautifulSoup
 from tqdm import tqdm
 from urllib.parse import quote
+from distutils.dir_util import copy_tree
 
 
 TS2017_DIR = "/home/toon/.PlayOnLinux/wineprefix/TrainSimulator2017/drive_c/Program Files/Train Simulator 2017/"
 CACHE_DIR = ".tspmcache"
 ADDONS_FILE = os.path.join(CACHE_DIR, "index.json")
 ARCHIVE_DIR = os.path.join(CACHE_DIR, "archives")
+TMP_DIR = os.path.join(CACHE_DIR, "tmp")
+FINAL_DIR = os.path.join(CACHE_DIR, "final")
 
-if not os.path.isdir(CACHE_DIR):
-    os.mkdir(CACHE_DIR)
-
-if not os.path.isdir(ARCHIVE_DIR):
-    os.mkdir(ARCHIVE_DIR)
+for dir in (CACHE_DIR, ARCHIVE_DIR, TMP_DIR, FINAL_DIR):
+    if not os.path.isdir(dir):
+        os.mkdir(dir)
 
 
 @click.group()
@@ -164,6 +166,18 @@ def download(name, url, filename):
         sys.exit(1)
 
 
+def extract(filename, dest_dir):
+    filetype = subprocess.run(["file", filename], capture_output=True).stdout.decode()[:-1]
+    if 'Zip' in filetype:
+        archive = zipfile.ZipFile(filename, 'r')
+        for file in tqdm(archive.filelist, desc="Extracting {}".format(filename)):
+            linux_filename = file.filename.replace("\\", "/")
+            archive.extract(file.filename, os.path.join(dest_dir, linux_filename))
+    else:
+        print("Sorry, filetype is '{}' and only zipfiles are supported at the moment".format(filetype))
+        sys.exit(1)
+
+
 @cli.command()
 @click.argument("name")
 def install(name):
@@ -189,16 +203,25 @@ def install(name):
     else:
         download(name, addon['url'], filename)
 
-    filetype = subprocess.run(["file", filename], capture_output=True).stdout.decode()[:-1]
+    # first, extract all files in a temporary directory
+    tmp_dir = os.path.join(TMP_DIR, name)
+    extract(filename, tmp_dir)
 
-    if 'Zip' in filetype:
-        archive = zipfile.ZipFile(filename, 'r')
-        for file in tqdm(archive.filelist, desc="Extracting..."):
-            linux_filename = file.filename.replace("\\", "/")
-            archive.extract(file.filename, os.path.join(TS2017_DIR, linux_filename))
-    else:
-        print("Sorry, filetype is '{}' and only zipfiles are supported at the moment".format(filetype))
-        sys.exit(1)
+    final_dir = os.path.join(FINAL_DIR, name)
+    # second, check for any *.rwp files. They are zip files containing the real addon files
+    second_extract = False
+    for file in glob.glob(tmp_dir + "/**/*.rwp"):
+        second_extract = True
+        extract(file, final_dir)
+
+    # if we did not extract anythign in the second phase, then final files are still in tmp dir
+    if not second_extract:
+        final_dir = tmp_dir
+
+    # third, copy files in to TS2017 dir
+    for file in glob.glob(final_dir + "/*"):
+        dir_name = os.path.basename(file)
+        copy_tree(file, os.path.join(TS2017_DIR, dir_name))
 
 if __name__ == '__main__':
     cli()
