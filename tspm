@@ -191,12 +191,17 @@ def download(name, url, filename):
 
 
 def extract(filename, dest_dir):
+    print("Extracting {} to {}".format(filename, dest_dir))
     filetype = subprocess.run(["file", filename], capture_output=True).stdout.decode()[:-1]
     if 'Zip' in filetype:
         archive = zipfile.ZipFile(filename, 'r')
         for file in tqdm(archive.filelist, desc="Extracting {}".format(filename)):
             linux_filename = file.filename.replace("\\", "/")
             archive.extract(file.filename, os.path.join(dest_dir, linux_filename))
+    elif 'RAR' in filetype:
+        if not os.path.isdir(dest_dir):
+            os.mkdir(dest_dir)
+        subprocess.run(["unrar", "xo+", filename, "-d", dest_dir], capture_output=True)
     else:
         print("Sorry, filetype is '{}' and only zipfiles are supported at the moment".format(filetype))
         sys.exit(1)
