@@ -156,7 +156,7 @@ def download(name, url, filename):
         else:
             filesize = int(response.headers['Content-length'])
             with open(filename, "wb") as f:
-                for chunk in tqdm(response.iter_content(1024), total=filesize // 1024, unit='kb'):
+                for chunk in tqdm(response.iter_content(1024), total=filesize // 1024, unit='kB'):
                     f.write(chunk)
     except:
         traceback.print_exc()
