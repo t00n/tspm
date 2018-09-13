@@ -175,15 +175,15 @@ def install(name):
                 for chunk in tqdm(response.iter_content(1024), total=filesize // 1024, unit='kb'):
                     f.write(chunk)
 
-    filetype = subprocess.run(["file", filename], capture_output=True).stdout
+    filetype = subprocess.run(["file", filename], capture_output=True).stdout.decode()[:-1]
 
-    if b'Zip' in filetype:
+    if 'Zip' in filetype:
         archive = zipfile.ZipFile(filename, 'r')
         for file in tqdm(archive.filelist, desc="Extracting..."):
             linux_filename = file.filename.replace("\\", "/")
             archive.extract(file.filename, os.path.join(TS2017_DIR, linux_filename))
     else:
-        print("Open zipfiles are supported at the moment")
+        print("Sorry, filetype is '{}' and only zipfiles are supported at the moment".format(filetype))
         sys.exit(1)
 
 if __name__ == '__main__':
