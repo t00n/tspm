@@ -16,7 +16,19 @@ from urllib.parse import quote
 from distutils.dir_util import copy_tree
 
 
-TS2017_DIR = "/home/toon/.PlayOnLinux/wineprefix/TrainSimulator2017/drive_c/Program Files/Train Simulator 2017/"
+def load_TS2017_DIR():
+    try:
+        with open("TS2017_DIR") as f:
+            ts_dir = f.read()
+    except FileNotFoundError:
+        ts_dir = input("Enter the full path to your Train Simulator 2017 installation: ")
+        with open("TS2017_DIR", "w") as f:
+            f.write(ts_dir)
+
+    return ts_dir
+
+
+TS2017_DIR = load_TS2017_DIR()
 CACHE_DIR = ".tspmcache"
 INDEX_FILE = os.path.join(CACHE_DIR, "index.json")
 ARCHIVE_DIR = os.path.join(CACHE_DIR, "archives")
