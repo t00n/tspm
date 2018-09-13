@@ -6,6 +6,7 @@ import sys
 import os
 import zipfile
 import subprocess
+import traceback
 from bs4 import BeautifulSoup
 from tqdm import tqdm
 from urllib.parse import quote
@@ -14,9 +15,13 @@ from urllib.parse import quote
 TS2017_DIR = "/home/toon/.PlayOnLinux/wineprefix/TrainSimulator2017/drive_c/Program Files/Train Simulator 2017/"
 CACHE_DIR = ".tspmcache"
 ADDONS_FILE = os.path.join(CACHE_DIR, "index.json")
+ARCHIVE_DIR = os.path.join(CACHE_DIR, "archives")
 
 if not os.path.isdir(CACHE_DIR):
     os.mkdir(CACHE_DIR)
+
+if not os.path.isdir(ARCHIVE_DIR):
+    os.mkdir(ARCHIVE_DIR)
 
 
 @click.group()
@@ -89,32 +94,11 @@ def list():
         print("_" * 80)
 
 
-@cli.command()
-@click.argument("name")
-def install(name):
-    name = name.strip()
-    with open(ADDONS_FILE) as f:
-        cache = json.load(f)
-
-    addon = None
-
-    for add in cache['addons']:
-        if add['name'] == name:
-            addon = add
-            break
-
-    if addon is None:
-        print("Addon '{}' not found, maybe you should try to update first ?".format(name))
-        sys.exit(1)
-
-    filename = os.path.join(CACHE_DIR, name)
-
-    if os.path.exists(filename):
-        print("File '{}'' already exists".format(filename))
-    else:
+def download(name, url, filename):
+    try:
         print("Download '{}'".format(name))
         # first retrieve file download url
-        response = requests.get(addon['url'])
+        response = requests.get(url)
         soup = BeautifulSoup(response.text, 'html.parser')
 
         dl_url = soup.select("div[class=download-button] > p > a")[0].attrs['href']
@@ -131,7 +115,7 @@ def install(name):
         print("Download id:", dl_id)
 
         # assumes all files are on dl-file.com
-        quoted_url = quote(addon['url']).replace("/", "%2F")
+        quoted_url = quote(url).replace("/", "%2F")
 
         cookies = {
             'lang': 'english',
@@ -174,6 +158,36 @@ def install(name):
             with open(filename, "wb") as f:
                 for chunk in tqdm(response.iter_content(1024), total=filesize // 1024, unit='kb'):
                     f.write(chunk)
+    except:
+        traceback.print_exc()
+        os.remove(filename)
+        sys.exit(1)
+
+
+@cli.command()
+@click.argument("name")
+def install(name):
+    name = name.strip()
+    with open(ADDONS_FILE) as f:
+        cache = json.load(f)
+
+    addon = None
+
+    for add in cache['addons']:
+        if add['name'] == name:
+            addon = add
+            break
+
+    if addon is None:
+        print("Addon '{}' not found, maybe you should try to update first ?".format(name))
+        sys.exit(1)
+
+    filename = os.path.join(ARCHIVE_DIR, name)
+
+    if os.path.exists(filename):
+        print("File '{}'' already exists".format(filename))
+    else:
+        download(name, addon['url'], filename)
 
     filetype = subprocess.run(["file", filename], capture_output=True).stdout.decode()[:-1]
 
