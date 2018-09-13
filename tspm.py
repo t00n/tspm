@@ -163,14 +163,17 @@ def install(name):
             'method_premium': ''
         }
 
-        response = requests.post(dl_url, headers=headers, cookies=cookies, data=data)
+        response = requests.post(dl_url, headers=headers, cookies=cookies, data=data, stream=True)
 
         if not response.ok or response.headers['Content-Transfer-Encoding'] != 'binary':
             print("Something wrong happened during download")
             sys.exit(1)
 
-        with open(filename, "wb") as f:
-            f.write(response.content)
+        else:
+            filesize = int(response.headers['Content-length'])
+            with open(filename, "wb") as f:
+                for chunk in tqdm(response.iter_content(1024), total=filesize // 1024, unit='kb'):
+                    f.write(chunk)
 
     filetype = subprocess.run(["file", filename], capture_output=True).stdout
 
