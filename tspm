@@ -150,7 +150,7 @@ def download(name, url, filename):
         print("Download url:", dl_url)
 
         if "dl-file.com" not in dl_url:
-            print("Sorry, url is {} and tspm is only supporting dl-file.com at the moment".format(dl_url))
+            print("Sorry, url is {} and tspm only supports dl-file.com at the moment".format(dl_url))
             sys.exit(1)
 
         # http://dl-file.com/vuo0airlf15o/Diesel_locomotive_2____10__-2437_v1.2_for_TS_2017.rar.html
@@ -193,7 +193,7 @@ def download(name, url, filename):
         response = requests.post(dl_url, headers=headers, cookies=cookies, data=data, stream=True)
 
         if not response.ok or response.headers['Content-Transfer-Encoding'] != 'binary':
-            print("Something wrong happened during download")
+            print("Something bad happened during download")
             sys.exit(1)
 
         else:
@@ -220,7 +220,7 @@ def extract(filename, dest_dir):
             os.mkdir(dest_dir)
         subprocess.run(["unrar", "xo+", filename, "-d", dest_dir], capture_output=True)
     else:
-        print("Sorry, filetype is '{}' and only zipfiles are supported at the moment".format(filetype))
+        print("Sorry, filetype is '{}' and only zip and rar files are supported at the moment".format(filetype))
         sys.exit(1)
 
 
@@ -234,7 +234,7 @@ def install(name):
     filename = os.path.join(ARCHIVE_DIR, name)
 
     if os.path.exists(filename):
-        print("File '{}'' already exists".format(filename))
+        print("File '{}' already exists".format(filename))
     else:
         download(name, addon['url'], filename)
 
