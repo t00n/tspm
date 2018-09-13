@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import click
 import requests
 import re
@@ -16,7 +18,7 @@ from distutils.dir_util import copy_tree
 
 TS2017_DIR = "/home/toon/.PlayOnLinux/wineprefix/TrainSimulator2017/drive_c/Program Files/Train Simulator 2017/"
 CACHE_DIR = ".tspmcache"
-ADDONS_FILE = os.path.join(CACHE_DIR, "index.json")
+INDEX_FILE = os.path.join(CACHE_DIR, "index.json")
 ARCHIVE_DIR = os.path.join(CACHE_DIR, "archives")
 TMP_DIR = os.path.join(CACHE_DIR, "tmp")
 FINAL_DIR = os.path.join(CACHE_DIR, "final")
@@ -72,7 +74,7 @@ def update():
 
             i += 1
 
-    with open(ADDONS_FILE, "w") as f:
+    with open(INDEX_FILE, "w") as f:
         json.dump({
             'addons': sorted(addons, key=lambda x: x['name']),
             'addons_by_category': {
@@ -81,12 +83,17 @@ def update():
         }, f)
 
 
+def get_index():
+    with open(INDEX_FILE) as f:
+        index = json.load(f)
+    return index
+
+
 @cli.command()
 def list():
-    with open(ADDONS_FILE) as f:
-        cache = json.load(f)
+    index = get_index()
 
-    addons_by_category = cache['addons_by_category']
+    addons_by_category = index['addons_by_category']
 
     for category, addons in addons_by_category.items():
         print(category)
@@ -94,6 +101,23 @@ def list():
         for addon in addons:
             print(addon['name'])
         print("_" * 80)
+
+
+def get_addon(name):
+    index = get_index()
+
+    addon = None
+
+    for add in index['addons']:
+        if add['name'] == name:
+            addon = add
+            break
+
+    if addon is None:
+        print("Addon '{}' not found, maybe you should try to update first ?".format(name))
+        sys.exit(1)
+
+    return addon
 
 
 def download(name, url, filename):
@@ -182,19 +206,8 @@ def extract(filename, dest_dir):
 @click.argument("name")
 def install(name):
     name = name.strip()
-    with open(ADDONS_FILE) as f:
-        cache = json.load(f)
 
-    addon = None
-
-    for add in cache['addons']:
-        if add['name'] == name:
-            addon = add
-            break
-
-    if addon is None:
-        print("Addon '{}' not found, maybe you should try to update first ?".format(name))
-        sys.exit(1)
+    addon = get_addon(name)
 
     filename = os.path.join(ARCHIVE_DIR, name)
 
