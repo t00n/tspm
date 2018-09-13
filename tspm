@@ -21,7 +21,12 @@ def load_TS2017_DIR():
         with open("TS2017_DIR") as f:
             ts_dir = f.read()
     except FileNotFoundError:
-        ts_dir = input("Enter the full path to your Train Simulator 2017 installation: ")
+        def ask_path():
+            return input("Enter the full path to your Train Simulator 2017 installation: ")
+        ts_dir = ask_path()
+        while not os.path.isdir(ts_dir):
+            print("{} is not a directory, check again".format(ts_dir))
+            ts_dir = ask_path()
         with open("TS2017_DIR", "w") as f:
             f.write(ts_dir)
 
@@ -48,7 +53,7 @@ def cli():
 BASE_CATEGORY_URL = "http://www.trainsimmods.com/category/train-simulator-2017/page/{}"
 
 
-@cli.command()
+@cli.command(help="Update index of addons")
 def update():
     i = 1
     addons = []
@@ -101,7 +106,7 @@ def get_index():
     return index
 
 
-@cli.command()
+@cli.command(help="List addons")
 def list():
     index = get_index()
 
@@ -219,7 +224,7 @@ def extract(filename, dest_dir):
         sys.exit(1)
 
 
-@cli.command()
+@cli.command(help="Install addon")
 @click.argument("name")
 def install(name):
     name = name.strip()
