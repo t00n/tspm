@@ -218,7 +218,7 @@ def extract(filename, dest_dir):
     elif 'RAR' in filetype:
         if not os.path.isdir(dest_dir):
             os.mkdir(dest_dir)
-        subprocess.run(["unrar", "xo+", filename, "-d", dest_dir], capture_output=True)
+        subprocess.run(["unrar", "xo+", filename, "-d", dest_dir], capture_output=True, check=True)
     else:
         print("Sorry, filetype is '{}' and only zip and rar files are supported at the moment".format(filetype))
         sys.exit(1)
