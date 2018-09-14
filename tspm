@@ -255,8 +255,9 @@ def install(name):
 
     # third, copy files in to TS2017 dir
     for file in glob.glob(final_dir + "/*"):
-        dir_name = os.path.basename(file)
-        copy_tree(file, os.path.join(TS2017_DIR, dir_name))
+        dir_name = os.path.join(TS2017_DIR, os.path.basename(file))
+        print("Copying '{}' to '{}'".format(file, dir_name))
+        copy_tree(file, dir_name)
 
 if __name__ == '__main__':
     cli()
