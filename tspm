@@ -10,10 +10,13 @@ import zipfile
 import subprocess
 import traceback
 import glob
+import logging
 from bs4 import BeautifulSoup
 from tqdm import tqdm
 from urllib.parse import quote
 from distutils.dir_util import copy_tree
+
+logger = logging.getLogger("TSPM")
 
 
 def load_TS2017_DIR():
@@ -46,8 +49,12 @@ for dir in (CACHE_DIR, ARCHIVE_DIR, TMP_DIR, FINAL_DIR):
 
 
 @click.group()
-def cli():
-    pass
+@click.option("-D", "--debug", is_flag=True,
+              help="Run in debug mode (highly verbose)")
+def cli(debug):
+    if debug:
+        logging.basicConfig(level=logging.DEBUG)
+    logger.debug("Starting tspm...")
 
 
 BASE_CATEGORY_URL = "http://www.trainsimmods.com/category/train-simulator-2017/page/{}"
@@ -108,7 +115,12 @@ def get_index():
 
 @cli.command(help="List addons")
 def list():
-    index = get_index()
+    try:
+        index = get_index()
+    except FileNotFoundError:
+        print("!!! Cannot list existing packages: unable to read index")
+        print("(hint: try to run `%s update` first)" % sys.argv[0])
+        return
 
     addons_by_category = index['addons_by_category']
 
@@ -208,7 +220,8 @@ def download(name, url, filename):
 
 
 def extract(filename, dest_dir):
-    filetype = subprocess.run(["file", filename], capture_output=True).stdout.decode()[:-1]
+    filetype = subprocess.check_output(["file", filename]).decode()
+    logger.debug("Detected type for %s: %s", filename, filetype)
     if 'Zip' in filetype:
         archive = zipfile.ZipFile(filename, 'r')
         for file in tqdm(archive.filelist, desc="Extracting {} to {}".format(filename, dest_dir)):
@@ -218,7 +231,7 @@ def extract(filename, dest_dir):
         print("Extracting {} to {}".format(filename, dest_dir))
         if not os.path.isdir(dest_dir):
             os.mkdir(dest_dir)
-        subprocess.run(["unrar", "x", "-o+", filename, "-d", dest_dir], capture_output=True, check=True)
+        subprocess.check_output(["unrar", "x", "-o+", filename, "-d", dest_dir])
     else:
         print("Sorry, filetype is '{}' and only zip and rar files are supported at the moment".format(filetype))
         sys.exit(1)
