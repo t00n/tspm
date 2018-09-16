@@ -281,5 +281,19 @@ def install(name):
         print("Copying '{}' to '{}'".format(file, dir_name))
         copy_tree(file, dir_name)
 
+    # fourth, register addon in the PackageInfo directory
+    # remove the beginning of the path CACHE_DIR + FINAL_DIR + ...
+    files_list = [x[len(final_dir) + 1:] for x in glob.glob(final_dir + "/**", recursive=True) if os.path.isfile(x)]
+
+    with open(os.path.join(TS2017_DIR, "PackageInfo", name + ".pi"), "w") as f:
+        f.write(str(len(files_list)) + '\n')
+        f.write('\n')
+        f.write('eUnprotected\n')
+        for fn in files_list:
+            fn = fn.replace("/", "\\")
+            f.write(fn + '\n')
+        f.write("aa" * 16)
+
+
 if __name__ == '__main__':
     cli()
