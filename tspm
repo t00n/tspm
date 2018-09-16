@@ -245,9 +245,10 @@ def install(name):
     final_dir = os.path.join(FINAL_DIR, name)
     # second, check for any *.rwp files. They are zip files containing the real addon files
     second_extract = False
-    for file in glob.glob(tmp_dir + "/**.rwp"):
-        second_extract = True
-        extract(file, final_dir)
+    for file in glob.glob(tmp_dir + "/**/**.rwp"):
+        if os.path.isfile(file):
+            second_extract = True
+            extract(file, final_dir)
 
     # if we did not extract anythign in the second phase, then final files are still in tmp dir
     if not second_extract:
