@@ -208,17 +208,17 @@ def download(name, url, filename):
 
 
 def extract(filename, dest_dir):
-    print("Extracting {} to {}".format(filename, dest_dir))
     filetype = subprocess.run(["file", filename], capture_output=True).stdout.decode()[:-1]
     if 'Zip' in filetype:
         archive = zipfile.ZipFile(filename, 'r')
-        for file in tqdm(archive.filelist, desc="Extracting {}".format(filename)):
+        for file in tqdm(archive.filelist, desc="Extracting {} to {}".format(filename, dest_dir)):
             linux_filename = file.filename.replace("\\", "/")
             archive.extract(file.filename, os.path.join(dest_dir, linux_filename))
     elif 'RAR' in filetype:
+        print("Extracting {} to {}".format(filename, dest_dir))
         if not os.path.isdir(dest_dir):
             os.mkdir(dest_dir)
-        subprocess.run(["unrar", "xo+", filename, "-d", dest_dir], capture_output=True, check=True)
+        subprocess.run(["unrar", "x", "-o+", filename, "-d", dest_dir], capture_output=True, check=True)
     else:
         print("Sorry, filetype is '{}' and only zip and rar files are supported at the moment".format(filetype))
         sys.exit(1)
@@ -245,7 +245,7 @@ def install(name):
     final_dir = os.path.join(FINAL_DIR, name)
     # second, check for any *.rwp files. They are zip files containing the real addon files
     second_extract = False
-    for file in glob.glob(tmp_dir + "/**/*.rwp"):
+    for file in glob.glob(tmp_dir + "/**.rwp"):
         second_extract = True
         extract(file, final_dir)
 
