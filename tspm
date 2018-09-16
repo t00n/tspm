@@ -224,17 +224,22 @@ def extract(filename, dest_dir):
     logger.debug("Detected type for %s: %s", filename, filetype)
     if 'Zip' in filetype:
         archive = zipfile.ZipFile(filename, 'r')
-        for file in tqdm(archive.filelist, desc="Extracting {} to {}".format(filename, dest_dir)):
-            # work around filenames with \\ instead of / because they were created on windows
-            # the zipfile module seems to be bugged and does not make the conversion
-            # + when using archive.extract, the full path with \\ is used as the filename
-            linux_filename = os.path.join(dest_dir, file.filename.replace("\\", "/"))
-            dir_name = os.path.dirname(linux_filename)
-            if not os.path.isdir(dir_name):
-                os.makedirs(dir_name)
-            content = archive.read(file.filename)
-            with open(linux_filename, "wb") as f:
-                f.write(content)
+        for file in tqdm(archive.filelist, desc="Extracting {}".format(filename)):
+            if not file.is_dir():
+                # work around filenames with \\ instead of / because they were created on windows
+                # the zipfile module seems to be bugged and does not make the conversion
+                # + when using archive.extract, the full path with \\ is used as the filename
+                linux_filename = os.path.join(dest_dir, file.filename.replace("\\", "/"))
+                logger.debug("linux_filename: {}".format(linux_filename))
+                dir_name = os.path.dirname(linux_filename)
+                logger.debug("dir_name: ".format(dir_name))
+                if not os.path.isdir(dir_name):
+                    logger.debug("makedirs {}".format(dir_name))
+                    os.makedirs(dir_name)
+                logger.debug("read {}".format(file.filename))
+                content = archive.read(file.filename)
+                with open(linux_filename, "wb") as f:
+                    f.write(content)
     elif 'RAR' in filetype:
         print("Extracting {} to {}".format(filename, dest_dir))
         if not os.path.isdir(dest_dir):
