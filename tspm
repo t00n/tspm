@@ -225,8 +225,16 @@ def extract(filename, dest_dir):
     if 'Zip' in filetype:
         archive = zipfile.ZipFile(filename, 'r')
         for file in tqdm(archive.filelist, desc="Extracting {} to {}".format(filename, dest_dir)):
-            linux_filename = file.filename.replace("\\", "/")
-            archive.extract(file.filename, os.path.join(dest_dir, linux_filename))
+            # work around filenames with \\ instead of / because they were created on windows
+            # the zipfile module seems to be bugged and does not make the conversion
+            # + when using archive.extract, the full path with \\ is used as the filename
+            linux_filename = os.path.join(dest_dir, file.filename.replace("\\", "/"))
+            dir_name = os.path.dirname(linux_filename)
+            if not os.path.isdir(dir_name):
+                os.makedirs(dir_name)
+            content = archive.read(file.filename)
+            with open(linux_filename, "wb") as f:
+                f.write(content)
     elif 'RAR' in filetype:
         print("Extracting {} to {}".format(filename, dest_dir))
         if not os.path.isdir(dest_dir):
@@ -258,7 +266,7 @@ def install(name):
     final_dir = os.path.join(FINAL_DIR, name)
     # second, check for any *.rwp files. They are zip files containing the real addon files
     second_extract = False
-    for file in glob.glob(tmp_dir + "/**/**.rwp"):
+    for file in glob.glob(tmp_dir + "/**/**.rwp", recursive=True):
         if os.path.isfile(file):
             second_extract = True
             extract(file, final_dir)
