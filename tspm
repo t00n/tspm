@@ -10,10 +10,13 @@ import zipfile
 import subprocess
 import traceback
 import glob
+import logging
 from bs4 import BeautifulSoup
 from tqdm import tqdm
 from urllib.parse import quote
 from distutils.dir_util import copy_tree
+
+logger = logging.getLogger("TSPM")
 
 
 def load_TS2017_DIR():
@@ -46,8 +49,12 @@ for dir in (CACHE_DIR, ARCHIVE_DIR, TMP_DIR, FINAL_DIR):
 
 
 @click.group()
-def cli():
-    pass
+@click.option("-D", "--debug", is_flag=True,
+              help="Run in debug mode (highly verbose)")
+def cli(debug):
+    if debug:
+        logging.basicConfig(level=logging.DEBUG)
+    logger.debug("Starting tspm...")
 
 
 BASE_CATEGORY_URL = "http://www.trainsimmods.com/category/train-simulator-2017/page/{}"
@@ -214,6 +221,7 @@ def download(name, url, filename):
 
 def extract(filename, dest_dir):
     filetype = subprocess.check_output(["file", filename]).decode()
+    logger.debug("Detected type for %s: %s", filename, filetype)
     if 'Zip' in filetype:
         archive = zipfile.ZipFile(filename, 'r')
         for file in tqdm(archive.filelist, desc="Extracting {} to {}".format(filename, dest_dir)):
