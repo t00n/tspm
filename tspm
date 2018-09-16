@@ -108,7 +108,12 @@ def get_index():
 
 @cli.command(help="List addons")
 def list():
-    index = get_index()
+    try:
+        index = get_index()
+    except FileNotFoundError:
+        print("!!! Cannot list existing packages: unable to read index")
+        print("(hint: try to run `%s update` first)" % sys.argv[0])
+        return
 
     addons_by_category = index['addons_by_category']
 
