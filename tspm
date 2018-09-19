@@ -310,5 +310,11 @@ def install(name):
         f.write("aa" * 16)
 
 
+@cli.command(help="List installed addons")
+def local():
+    installed_list = get_installed()
+    for addon in installed_list:
+        print(addon)
+
 if __name__ == '__main__':
     cli()
