@@ -113,6 +113,13 @@ def get_index():
     return index
 
 
+def get_installed():
+    return [
+        os.path.splitext(os.path.basename(f))[0]
+        for f in os.listdir(os.path.join(TS2017_DIR, "PackageInfo"))
+    ]
+
+
 @cli.command(help="List addons")
 def list():
     try:
@@ -124,11 +131,14 @@ def list():
 
     addons_by_category = index['addons_by_category']
 
+    installed_list = get_installed()
+
     for category, addons in addons_by_category.items():
         print(category)
         print("=" * len(category))
         for addon in addons:
-            print(addon['name'])
+            installed = addon['name'] in installed_list
+            print(" {}  ".format("*" if installed else " "), addon['name'])
         print("_" * 80)
 
 
