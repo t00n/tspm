@@ -316,5 +316,22 @@ def local():
     for addon in installed_list:
         print(addon)
 
+
+@cli.command(help="Uninstall and addon")
+@click.argument("name")
+def uninstall(name):
+    installed_list = get_installed()
+    if name not in installed_list:
+        print("{} is not installed".format(name))
+        sys.exit(1)
+
+    packageinfo_filename = os.path.join(TS2017_DIR, "PackageInfo", "{}.pi".format(name))
+    with open(packageinfo_filename) as f:
+        for line in f.readlines()[3:-1]:
+            filename = os.path.join(TS2017_DIR, line[:-1].replace("\\", "/"))
+            print("Deleting {}".format(filename))
+            os.remove(filename)
+    os.remove(packageinfo_filename)
+
 if __name__ == '__main__':
     cli()
